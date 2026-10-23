@@ -21,6 +21,14 @@
   // Served only on the custom domain (Cloudflare creates the DNS record and certificate);
   // the workers.dev URL is off so Cloudflare Access on the domain cannot be bypassed.
   "routes": [{ "pattern": "tursostudio.markefin.app", "custom_domain": true }],
+  // Built-in "mf-db" connection: /proxy/turso forwards queries here with the TURSO_AUTH_TOKEN
+  // Worker secret (set in the dashboard, never in this file). Access values come from the
+  // Cloudflare Access application protecting this domain.
+  "vars": {
+    "TURSO_DATABASE_URL": "libsql://mf-db-vercel-icfg-txtfwnlwtvvexwyvkvytmatj.aws-us-east-1.turso.io",
+    "CF_ACCESS_TEAM_DOMAIN": "twilight-band-a89f.cloudflareaccess.com",
+    "CF_ACCESS_AUD": "0ff84d9288ac14b97052205b9b907c2fc2f132084699137feac8a74a6398eaf2"
+  },
   "workers_dev": false,
   "preview_urls": false
 }

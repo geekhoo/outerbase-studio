@@ -1,5 +1,6 @@
 import { SavedConnectionRawLocalStorage } from "@/app/(theme)/connect/saved-connection-storage";
 import { LocalConnectionData, LocalDashboardData, localDb } from "@/indexdb";
+import { ensureBuiltinConnections } from "@/lib/builtin-connections";
 import { generateId } from "@/lib/generate-id";
 import parseSafeJson from "@/lib/json-safe";
 import useSWR, { mutate } from "swr";
@@ -77,6 +78,7 @@ export function useLocalConnectionList() {
         localStorage.removeItem("connections");
       }
 
+      await ensureBuiltinConnections();
       return await localDb.connection.toCollection().toArray();
     }
   );
@@ -86,6 +88,7 @@ export function useLocalConnection(id: string) {
   return useSWR(
     `/connections/local/${id}`,
     async (): Promise<LocalConnectionData | undefined> => {
+      await ensureBuiltinConnections();
       return await localDb.connection.get(id);
     },
     {
