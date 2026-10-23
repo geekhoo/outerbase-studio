@@ -1,0 +1,31 @@
+name: Deploy to Cloudflare (tursostudio.markefin.app)
+
+# Builds Studio with OpenNext on Linux and deploys the "tursostudio" Worker to the Markefin
+# Cloudflare account. Worker name, KV namespace and custom domain live in wrangler.jsonc.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build (OpenNext)
+        run: npx opennextjs-cloudflare build
+      - name: Deploy
+        run: npx opennextjs-cloudflare deploy
