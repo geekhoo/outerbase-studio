@@ -92,6 +92,30 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ path: stri
   });
 }
 
-export function GET() {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+// The libSQL client probes GET /v2 or /v3 to check the protocol version before querying.
+const VERSION_PATHS = new Set(["v3", "v2"]);
+
+export async function GET(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+  const { path } = await ctx.params;
+  const subpath = (path ?? []).join("/");
+  if (!VERSION_PATHS.has(subpath)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const env = readEnv();
+  if (!(await verifyAccess(req, env))) {
+    return NextResponse.json({ error: "Cloudflare Access login required" }, { status: 401 });
+  }
+  if (!env.TURSO_DATABASE_URL || !env.TURSO_AUTH_TOKEN) {
+    return NextResponse.json({ error: "Turso is not configured on the server" }, { status: 500 });
+  }
+
+  const base = env.TURSO_DATABASE_URL.replace(/^libsql:\/\//, "https://").replace(/\/+$/, "");
+  const upstream = await fetch(`${base}/${subpath}`, {
+    headers: { Authorization: `Bearer ${env.TURSO_AUTH_TOKEN}` },
+  });
+  return new NextResponse(upstream.body, {
+    status: upstream.status,
+    headers: { "Content-Type": upstream.headers.get("content-type") ?? "text/plain", "Cache-Control": "no-store" },
+  });
 }
